@@ -16,3 +16,6 @@ ucGUI SJIS型字模库“组合”工具
 
 * 在生成的字模文件中，手动去除文件开头的索引以及结尾的空行
 
+## License
+
+BSD New License

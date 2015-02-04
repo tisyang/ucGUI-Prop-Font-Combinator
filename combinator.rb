@@ -47,8 +47,8 @@ SJISSourceLineCount = 4
 # *编码应与 SJISEncoding 一致*
 #
 # 备注：实际使用中，可能受限于 FLASH 容量，无法使用全字符集字库，这时一般有两种选择：
-#     1. 仅生成用到的字符的字模。
-#     2. 生成较全面的字符集字模，然后仅激活其中用到的字符。
+#    1. 仅生成用到的字符的字模。
+#    2. 生成较全面的字符集字模，然后仅激活其中用到的字符。
 # 方法1占用很少的空间，但灵活性很差，每次需要用到新字符字模时，必须重新生成字体文件。
 # 方法2较1多占少量空间，但在需要用到不超过字符集的字符字模时，仅在字符表中激活即可。
 # 具体请看生成后的字体文件，即可明白
@@ -82,114 +82,114 @@ def dump_font(font, width)
 end
 
 def parse_source(file, linecount, width)
-    content = open(file, "r:#{SJISEncoding}", &:read)
-    fonts = content.each_line.each_slice(linecount).map(&:join).map {|x| decode_font(x, width)}
+	content = open(file, "r:#{SJISEncoding}", &:read)
+	fonts = content.each_line.each_slice(linecount).map(&:join).map {|x| decode_font(x, width)}
 end
 
 def dump_table(fonts, tablename, xsize, width, limit)
-    limit_chars = ""
-    if limit != ""
-        limit_chars = open(limit, "r:#{SJISEncoding}", &:read).strip
-    end
-    s = []
-    s << "GUI_FLASH const GUI_CHARINFO #{tablename}[#{fonts.size}] = {"
-    fonts.each do |font|
-        if limit_chars.empty? || limit_chars.include?(font[:char])
-            s << "\t{#{xsize}, #{xsize}, #{width}, (void GUI_FLASH *)&#{font[:name]}}, /* #{font[:char]} */"
-        else
-            s << "\t{#{xsize}, #{xsize}, #{width}, (void GUI_FLASH *)0 /*&#{font[:name]}*/}, /* #{font[:char]} */"
-        end
-    end
-    s << "};"
-    s.join("\n")
+	limit_chars = ""
+	if limit != ""
+		limit_chars = open(limit, "r:#{SJISEncoding}", &:read).strip
+	end
+	s = []
+	s << "GUI_FLASH const GUI_CHARINFO #{tablename}[#{fonts.size}] = {"
+	fonts.each do |font|
+		if limit_chars.empty? || limit_chars.include?(font[:char])
+			s << "\t{#{xsize}, #{xsize}, #{width}, (void GUI_FLASH *)&#{font[:name]}}, /* #{font[:char]} */"
+		else
+			s << "\t{#{xsize}, #{xsize}, #{width}, (void GUI_FLASH *)0 /*&#{font[:name]}*/}, /* #{font[:char]} */"
+		end
+	end
+	s << "};"
+	s.join("\n")
 end
 
 def dump_prop(fonts, tablename)
-    i = 0
-    j = i + 1
-    output = []
-    count = 0
-    while j < fonts.size do
-        if fonts[j][:code].hex - fonts[j-1][:code].hex == 1
-            j += 1
-            next
-        end
-        count += 1
-        prop = []
-        prop << "GUI_FLASH const GUI_FONT_PROP Font_Prop_#{count} = {"
-        prop << "\t0X#{fonts[i][:code]}, /*start :#{fonts[i][:char]}*/"
-        prop << "\t0X#{fonts[j-1][:code]}, /*end   :#{fonts[j-1][:char]}, len=#{j-i}*/"
-        prop << "\t&#{tablename}[#{i}],"
-        prop << "\t(void GUI_FLASH *)&Font_Prop_#{count+1},"
-        prop << "};"
-        output << prop
-        i = j
-        j = i + 1
-    end
-    if i < fonts.size
-        prop = []
-        prop << "GUI_FLASH const GUI_FONT_PROP Font_Prop_#{count+1} = {"
-        prop << "\t0X#{fonts[i][:code]}, /*start :#{fonts[i][:char]}*/"
-        prop << "\t0X#{fonts[j-1][:code]}, /*end   :#{fonts[j-1][:char]}, len=#{j-i}*/"
-        prop << "\t&#{tablename}[#{i}],"
-        prop << "\t(void GUI_FLASH *)0,"
-        prop << "};"
-        output << prop
-    end
+	i = 0
+	j = i + 1
+	output = []
+	count = 0
+	while j < fonts.size do
+		if fonts[j][:code].hex - fonts[j-1][:code].hex == 1
+			j += 1
+			next
+		end
+		count += 1
+		prop = []
+		prop << "GUI_FLASH const GUI_FONT_PROP Font_Prop_#{count} = {"
+		prop << "\t0X#{fonts[i][:code]}, /*start :#{fonts[i][:char]}*/"
+		prop << "\t0X#{fonts[j-1][:code]}, /*end   :#{fonts[j-1][:char]}, len=#{j-i}*/"
+		prop << "\t&#{tablename}[#{i}],"
+		prop << "\t(void GUI_FLASH *)&Font_Prop_#{count+1},"
+		prop << "};"
+		output << prop
+		i = j
+		j = i + 1
+	end
+	if i < fonts.size
+		prop = []
+		prop << "GUI_FLASH const GUI_FONT_PROP Font_Prop_#{count+1} = {"
+		prop << "\t0X#{fonts[i][:code]}, /*start :#{fonts[i][:char]}*/"
+		prop << "\t0X#{fonts[j-1][:code]}, /*end   :#{fonts[j-1][:char]}, len=#{j-i}*/"
+		prop << "\t&#{tablename}[#{i}],"
+		prop << "\t(void GUI_FLASH *)0,"
+		prop << "};"
+		output << prop
+	end
 
-    output.reverse!.map! {|x| x.join("\n")}
-    output
+	output.reverse!.map! {|x| x.join("\n")}
+	output
 end
 
 
 ###########################
 def main()
-    ascii = nil
-    if ASCIIFontSource != ""
-        ascii = parse_source(ASCIIFontSource, ASCIISourceLineCount, ASCIIFontWidthBytes)
-        ascii.sort_by! {|x| x[:code]}
-    end
-    sjis = parse_source(SJISFontSource, SJISSourceLineCount, SJISFontWidthBytes)
-    sjis.sort_by! {|x| x[:code]}
+	ascii = nil
+	if ASCIIFontSource != ""
+		ascii = parse_source(ASCIIFontSource, ASCIISourceLineCount, ASCIIFontWidthBytes)
+		ascii.sort_by! {|x| x[:code]}
+	end
+	sjis = parse_source(SJISFontSource, SJISSourceLineCount, SJISFontWidthBytes)
+	sjis.sort_by! {|x| x[:code]}
 
 
-    open(OutputFontFile, "w:#{SJISEncoding}") do |f|
-        f.puts "#include \"GUI.h\"", "\n"
-        f.puts "#ifndef GUI_FLASH\n#define GUI_FLASH\n#endif", "\n"
+	open(OutputFontFile, "w:#{SJISEncoding}") do |f|
+		f.puts "#include \"GUI.h\"", "\n"
+		f.puts "#ifndef GUI_FLASH\n#define GUI_FLASH\n#endif", "\n"
 
-        if ascii != nil
-            ascii.each {|font| f.puts dump_font(font, ASCIIFontWidthBytes), "\n"}
-            f.puts dump_table(ascii, "ASCII_FontInfoTable", ASCIIFontWidth, ASCIIFontWidthBytes, ""), "\n"
-        end
+		if ascii != nil
+			ascii.each {|font| f.puts dump_font(font, ASCIIFontWidthBytes), "\n"}
+			f.puts dump_table(ascii, "ASCII_FontInfoTable", ASCIIFontWidth, ASCIIFontWidthBytes, ""), "\n"
+		end
 
-        sjis.each {|font| f.puts dump_font(font, SJISFontWidthBytes), "\n"}
-        f.puts dump_table(sjis, "SJIS_FontInfoTable", SJISFontWidth, SJISFontWidthBytes, SJISLimitCharsFile), "\n"
+		sjis.each {|font| f.puts dump_font(font, SJISFontWidthBytes), "\n"}
+		f.puts dump_table(sjis, "SJIS_FontInfoTable", SJISFontWidth, SJISFontWidthBytes, SJISLimitCharsFile), "\n"
 
-        dump_prop(sjis, "SJIS_FontInfoTable").each {|x| f.puts x, "\n"}
+		dump_prop(sjis, "SJIS_FontInfoTable").each {|x| f.puts x, "\n"}
 
-        if ascii != nil
-            # ASCII Prop info
-            f.puts "GUI_FLASH const GUI_FONT_PROP Font_Prop_ASCII = {"
-            f.puts "\t0X#{ascii[0][:code]}, /*start :#{ascii[0][:char]}*/"
-            f.puts "\t0X#{ascii[-1][:code]}, /*end   :#{ascii[-1][:char]}, len=#{ascii.size}*/"
-            f.puts "\t&ASCII_FontInfoTable[0],"
-            f.puts "\t(void GUI_FLASH *)&Font_Prop_1,"
-            f.puts "};"
+		if ascii != nil
+			# ASCII Prop info
+			f.puts "GUI_FLASH const GUI_FONT_PROP Font_Prop_ASCII = {"
+			f.puts "\t0X#{ascii[0][:code]}, /*start :#{ascii[0][:char]}*/"
+			f.puts "\t0X#{ascii[-1][:code]}, /*end	 :#{ascii[-1][:char]}, len=#{ascii.size}*/"
+			f.puts "\t&ASCII_FontInfoTable[0],"
+			f.puts "\t(void GUI_FLASH *)&Font_Prop_1,"
+			f.puts "};"
 
-            # Font info
-            f.puts "GUI_FLASH const GUI_FONT MyGUI_Font#{FontHeight} = {"
-            f.puts "\tGUI_FONTTYPE_PROP_SJIS,"
-            f.puts "\t#{FontHeight},"
-            f.puts "\t#{FontHeight},"
-            f.puts "\t1,"
-            f.puts "\t1,"
-            f.puts "\t(void GUI_FLASH *)&Font_Prop_ASCII,"
-            f.puts "};"
-        end
-    end
+			# Font info
+			f.puts "GUI_FLASH const GUI_FONT MyGUI_Font#{FontHeight} = {"
+			f.puts "\tGUI_FONTTYPE_PROP_SJIS,"
+			f.puts "\t#{FontHeight},"
+			f.puts "\t#{FontHeight},"
+			f.puts "\t1,"
+			f.puts "\t1,"
+			f.puts "\t(void GUI_FLASH *)&Font_Prop_ASCII,"
+			f.puts "};"
+		end
+	end
 
 end
 
 if __FILE__ == $0
-    main
+	main
 end
