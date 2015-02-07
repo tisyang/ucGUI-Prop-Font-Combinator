@@ -1,12 +1,12 @@
-# ucGUI-SJIS-Font-Combinator
+# ucGUI-Prop-Font-Combinator
 
-ucGUI SJIS型字模库“组合”工具
+ucGUI Prop型字模库“组合”工具
 
 与 PCtoLCD 程序配合，生成用于 ucGUI 显示用的字模字体文件
 
 ### 用法
 
-1. 先用 PCtoLCD 程序分别生成 ASCII 和 SJIS 类型的字模文件，
+1. 先用 PCtoLCD 程序分别生成 ASCII 和 NonASCII 的字模文件，
 
 2. 修改此程序配置项中对应的字段，然后在命令行运行 `ruby combinator.rb` 即可
 
